@@ -1,0 +1,45 @@
+{
+	"bsonType": "object",
+	"required": ["image_urls", "status", "create_time"],
+	"permission": false,
+	"properties": {
+		"related_id": {
+			"bsonType": "string",
+			"description": "关联的 question/note 记录 ID，冒烟阶段为空"
+		},
+		"image_urls": {
+			"bsonType": "array",
+			"items": { "bsonType": "string" },
+			"description": "云存储文件 ID 列表"
+		},
+		"raw_results": {
+			"bsonType": "array",
+			"items": { "bsonType": "string" },
+			"description": "每张图的识别结果"
+		},
+		"merged_content": {
+			"bsonType": "string",
+			"description": "合并后的 Markdown 内容"
+		},
+		"status": {
+			"bsonType": "string",
+			"description": "processing / done / failed"
+		},
+		"error_msg": {
+			"bsonType": "string",
+			"description": "错误信息"
+		},
+		"source": {
+			"bsonType": "string",
+			"description": "采集类型：question 拍错题 / note 拍笔记"
+		},
+		"create_time": {
+			"bsonType": "long",
+			"description": "创建时间戳"
+		},
+		"uid": {
+			"bsonType": "string",
+			"description": "设备用户 ID"
+		}
+	}
+}

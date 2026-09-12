@@ -1,0 +1,39 @@
+{
+	"bsonType": "object",
+	"required": ["rule", "create_time"],
+	"permission": false,
+	"properties": {
+		"rule": {
+			"bsonType": "string",
+			"description": "告警规则：single_burst 单次异常 / daily_limit 日限额等"
+		},
+		"level": {
+			"bsonType": "string",
+			"description": "warn / error"
+		},
+		"uid": {
+			"bsonType": "string",
+			"description": "设备用户 ID"
+		},
+		"function": {
+			"bsonType": "string",
+			"description": "触发的 AI 功能"
+		},
+		"metric_value": {
+			"bsonType": ["int", "long", "null"],
+			"description": "触发时的指标值"
+		},
+		"threshold": {
+			"bsonType": ["int", "long", "null"],
+			"description": "阈值"
+		},
+		"message": {
+			"bsonType": "string",
+			"description": "告警描述"
+		},
+		"create_time": {
+			"bsonType": "long",
+			"description": "创建时间戳"
+		}
+	}
+}

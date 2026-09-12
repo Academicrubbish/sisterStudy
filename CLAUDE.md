@@ -17,7 +17,7 @@
 
 ## 项目结构
 
-**现状**：项目由 hello uniCloud 演示模板创建，`pages/`、`uniCloud-alipay/cloudfunctions/`、`uni_modules/` 内含大量演示代码，**M0 阶段清理**（保留 uni-upgrade-center-app 可用于 APK 升级推送，uni-id-pages 不需要可移除）。
+**现状**：演示模板已于 2026-09-12 清理完毕（基线 commit 2be505d 可恢复）。当前处于 **M0 冒烟阶段**：`pages/home/index.vue` 为冒烟测试页，`processOcr` 云函数已从 Toolbox 迁移（axios 调百炼 qwen3.6-flash，环境变量 `QWEN_API_KEY`），`ocr_log` / `ai_call_logs` / `ai_alerts` 三个 schema 已就绪。uni_modules 仅保留 6 个基础组件库。
 
 **目标结构**：
 

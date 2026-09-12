@@ -1,0 +1,61 @@
+{
+	"bsonType": "object",
+	"required": ["function", "create_time"],
+	"permission": false,
+	"properties": {
+		"function": {
+			"bsonType": "string",
+			"description": "AI 功能标识：ocr / solution / exercise / embed"
+		},
+		"model": {
+			"bsonType": "string",
+			"description": "调用的模型名"
+		},
+		"uid": {
+			"bsonType": "string",
+			"description": "设备用户 ID"
+		},
+		"prompt_tokens": {
+			"bsonType": ["int", "null"],
+			"description": "输入 token 数"
+		},
+		"completion_tokens": {
+			"bsonType": ["int", "null"],
+			"description": "输出 token 数"
+		},
+		"total_tokens": {
+			"bsonType": ["int", "null"],
+			"description": "总 token 数"
+		},
+		"request_prompt_tokens": {
+			"bsonType": "array",
+			"items": { "bsonType": "int" },
+			"description": "每次模型请求的输入 token（多图场景）"
+		},
+		"request_completion_tokens": {
+			"bsonType": "array",
+			"items": { "bsonType": "int" },
+			"description": "每次模型请求的输出 token（多图场景）"
+		},
+		"duration_ms": {
+			"bsonType": "int",
+			"description": "调用耗时（毫秒）"
+		},
+		"status": {
+			"bsonType": "string",
+			"description": "success / error"
+		},
+		"error_msg": {
+			"bsonType": "string",
+			"description": "错误信息"
+		},
+		"batch_id": {
+			"bsonType": "string",
+			"description": "批次 ID"
+		},
+		"create_time": {
+			"bsonType": "long",
+			"description": "创建时间戳"
+		}
+	}
+}

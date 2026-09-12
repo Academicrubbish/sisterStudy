@@ -1,0 +1,9 @@
+{
+  "name": "processOcr",
+  "version": "1.0.0",
+  "description": "OCR 图片识别云函数（百炼 qwen3.6-flash 视觉模型）",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
