@@ -141,15 +141,19 @@ exports.main = async (event, context) => {
 	var imageUrls = event.imageUrls || []
 	var source = event.source || 'question' // question 拍错题 / note 拍笔记
 	var uid = event.uid || ''
+	var relatedId = event.related_id || '' // 关联 question/note 记录 ID（可空）
 	if (imageUrls.length === 0) {
 		return { code: -1, message: '图片列表为空' }
+	}
+	if (source !== 'question' && source !== 'note') {
+		return { code: -1, message: '非法的采集类型：' + source }
 	}
 
 	var db = uniCloud.database()
 
 	// 创建 OCR 日志
 	var logRes = await db.collection('ocr_log').add({
-		related_id: '', // 后续关联 question/note 记录 ID，冒烟阶段为空
+		related_id: relatedId, // 后续关联 question/note 记录 ID（可空）
 		image_urls: imageUrls,
 		raw_results: [],
 		merged_content: '',

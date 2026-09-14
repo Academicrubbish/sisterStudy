@@ -1,0 +1,7 @@
+{
+  "name": "saveQuestion",
+  "version": "1.0.0",
+  "description": "sisterStudy 云函数：saveQuestion",
+  "main": "index.js",
+  "dependencies": {}
+}

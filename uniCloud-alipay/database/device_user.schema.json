@@ -1,0 +1,27 @@
+{
+	"bsonType": "object",
+	"required": ["uid", "create_time"],
+	"permission": false,
+	"properties": {
+		"uid": {
+			"bsonType": "string",
+			"description": "device: 前缀自生成设备 ID"
+		},
+		"device_info": {
+			"bsonType": "string",
+			"description": "设备型号等信息（可选）"
+		},
+		"last_active_time": {
+			"bsonType": "long",
+			"description": "最近活跃时间戳"
+		},
+		"parent_pwd_hash": {
+			"bsonType": "string",
+			"description": "家长口令哈希（M1 仅预留不启用）"
+		},
+		"create_time": {
+			"bsonType": "long",
+			"description": "注册时间戳"
+		}
+	}
+}

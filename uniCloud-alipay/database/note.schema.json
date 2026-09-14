@@ -1,0 +1,39 @@
+{
+	"bsonType": "object",
+	"required": ["content_md", "uid", "create_time"],
+	"permission": false,
+	"properties": {
+		"content_md": {
+			"bsonType": "string",
+			"description": "笔记 Markdown 内容"
+		},
+		"image_file_ids": {
+			"bsonType": "array",
+			"items": { "bsonType": "string" },
+			"description": "笔记原图云存储 fileID 列表"
+		},
+		"subject": {
+			"bsonType": "string",
+			"description": "科目（AI 标注）"
+		},
+		"knowledge_points": {
+			"bsonType": "array",
+			"items": { "bsonType": "string" },
+			"description": "知识点（AI 标注，可手动修正）"
+		},
+		"summary": {
+			"bsonType": "string",
+			"description": "一句话摘要（AI 生成）"
+		},
+		"uid": {
+			"bsonType": "string",
+			"description": "归属设备用户"
+		},
+		"create_time": {
+			"bsonType": "long"
+		},
+		"update_time": {
+			"bsonType": "long"
+		}
+	}
+}

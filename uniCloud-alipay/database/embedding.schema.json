@@ -1,0 +1,30 @@
+{
+	"bsonType": "object",
+	"required": ["entity_type", "entity_id", "vector", "create_time"],
+	"permission": false,
+	"properties": {
+		"entity_type": {
+			"bsonType": "string",
+			"description": "question / note"
+		},
+		"entity_id": {
+			"bsonType": "string",
+			"description": "关联记录 ID"
+		},
+		"digest": {
+			"bsonType": "string",
+			"description": "内容前 50 字符（排查用）"
+		},
+		"vector": {
+			"bsonType": "array",
+			"items": { "bsonType": "double" },
+			"description": "embedding-3 向量（512 维）"
+		},
+		"uid": {
+			"bsonType": "string"
+		},
+		"create_time": {
+			"bsonType": "long"
+		}
+	}
+}

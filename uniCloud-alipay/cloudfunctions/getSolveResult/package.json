@@ -1,0 +1,7 @@
+{
+  "name": "getSolveResult",
+  "version": "1.0.0",
+  "description": "sisterStudy 云函数：getSolveResult",
+  "main": "index.js",
+  "dependencies": {}
+}

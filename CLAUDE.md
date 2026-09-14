@@ -17,7 +17,14 @@
 
 ## 项目结构
 
-**现状**：演示模板已于 2026-09-12 清理完毕（基线 commit 2be505d 可恢复）。当前处于 **M0 冒烟阶段**：`pages/home/index.vue` 为冒烟测试页，`processOcr` 云函数已从 Toolbox 迁移（axios 调百炼 qwen3.6-flash，环境变量 `QWEN_API_KEY`），`ocr_log` / `ai_call_logs` / `ai_alerts` 三个 schema 已就绪。uni_modules 仅保留 6 个基础组件库。
+**现状**：演示模板已于 2026-09-12 清理完毕（基线 commit 2be505d 可恢复）。**M0 冒烟已于 2026-09-14 通过**（commit b20371b），当前处于 **M1 阶段**（capture + socratic-solve + note）。uni_modules 仅保留 6 个基础组件库。
+
+**M0 落定的架构约束**：
+- **视觉模型调用必须 base64 内联**——百炼服务端拉不到支付宝云存储临时链接（400），云函数需先下载图片转 data URL 再传模型
+- **客户端图片必须压缩**——超 1600px 压到 1600px/质量 70，否则移动网络上传 60 秒超时
+- **API Key 双通道**——环境变量优先，读不到回退 `app_config` 集合（doc id 按功能命名，如 `qwen_api_key`）
+- HBuilderX 真机运行需取消「连接本地云函数」走云端运行
+- 待验证：多图批次上限、定时触发器（M1 processSolution 需要）
 
 **目标结构**：
 

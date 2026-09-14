@@ -1,0 +1,51 @@
+{
+	"bsonType": "object",
+	"required": ["question_id", "status", "batch_id", "create_time"],
+	"permission": false,
+	"properties": {
+		"question_id": {
+			"bsonType": "string",
+			"description": "关联 question 记录"
+		},
+		"stage1_hint": {
+			"bsonType": "string",
+			"description": "思路引导 Markdown（知识点定位+提示+引导提问，严禁含最终答案）"
+		},
+		"stage2_full": {
+			"bsonType": "string",
+			"description": "完整分步讲解+最终答案 Markdown"
+		},
+		"similar_exercise": {
+			"bsonType": "string",
+			"description": "同类练习一道（含答案）Markdown"
+		},
+		"meta": {
+			"bsonType": "object",
+			"description": "{subject, knowledge_points, root_cause, grade, duplicate_of}（M2 扩展完整引导树 ladder）"
+		},
+		"path_trace": {
+			"bsonType": "object",
+			"description": "{gave_up_stage, skipped_gate, duration_ms} 引导路径埋点（M2 扩展每级选项）"
+		},
+		"status": {
+			"bsonType": "string",
+			"description": "pending / success / error"
+		},
+		"error_msg": {
+			"bsonType": "string"
+		},
+		"batch_id": {
+			"bsonType": "string",
+			"description": "提交批次 ID（客户端轮询凭据）"
+		},
+		"create_time": {
+			"bsonType": "long"
+		},
+		"complete_time": {
+			"bsonType": ["long", "null"]
+		},
+		"uid": {
+			"bsonType": "string"
+		}
+	}
+}

@@ -1,0 +1,51 @@
+{
+	"bsonType": "object",
+	"required": ["content_md", "status", "origin", "uid", "create_time"],
+	"permission": false,
+	"properties": {
+		"content_md": {
+			"bsonType": "string",
+			"description": "题目 Markdown 内容"
+		},
+		"image_file_ids": {
+			"bsonType": "array",
+			"items": { "bsonType": "string" },
+			"description": "题目原图云存储 fileID 列表"
+		},
+		"subject": {
+			"bsonType": "string",
+			"description": "科目（AI 标注）"
+		},
+		"knowledge_points": {
+			"bsonType": "array",
+			"items": { "bsonType": "string" },
+			"description": "知识点（AI 标注，可手动修正）"
+		},
+		"root_cause": {
+			"bsonType": "string",
+			"description": "错误根因初判：概念模糊 / 思路偏差 / 计算习惯"
+		},
+		"status": {
+			"bsonType": "string",
+			"description": "unresolved / resolved / invalid（拍摄内容非题目）"
+		},
+		"origin": {
+			"bsonType": "string",
+			"description": "来源：photo 拍题（M2 扩展 practice / review）"
+		},
+		"ocr_log_id": {
+			"bsonType": "string",
+			"description": "关联 ocr_log 记录"
+		},
+		"uid": {
+			"bsonType": "string",
+			"description": "归属设备用户"
+		},
+		"create_time": {
+			"bsonType": "long"
+		},
+		"update_time": {
+			"bsonType": "long"
+		}
+	}
+}

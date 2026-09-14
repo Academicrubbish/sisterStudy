@@ -1,0 +1,7 @@
+{
+  "name": "saveNote",
+  "version": "1.0.0",
+  "description": "sisterStudy 云函数：saveNote",
+  "main": "index.js",
+  "dependencies": {}
+}

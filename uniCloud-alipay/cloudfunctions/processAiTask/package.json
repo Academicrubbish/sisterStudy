@@ -1,0 +1,16 @@
+{
+  "name": "processAiTask",
+  "version": "1.0.0",
+  "description": "统一任务消费者（定时触发）：solution / note_annotate / embed",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "triggers": [
+    {
+      "name": "processAiTaskTimer",
+      "type": "timer",
+      "config": "0 * * * * * *"
+    }
+  ]
+}

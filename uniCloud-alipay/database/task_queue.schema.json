@@ -1,0 +1,40 @@
+{
+	"bsonType": "object",
+	"required": ["task_type", "status", "create_time"],
+	"permission": false,
+	"properties": {
+		"task_type": {
+			"bsonType": "string",
+			"description": "solution / note_annotate / embed（M2 加 exercise）"
+		},
+		"ref_id": {
+			"bsonType": "string",
+			"description": "关联记录 ID（solution_log._id 或 note._id）"
+		},
+		"payload": {
+			"bsonType": "object",
+			"description": "任务参数 {content, question_id, solution_log_id, entity_type, entity_id, uid, grade}"
+		},
+		"status": {
+			"bsonType": "string",
+			"description": "pending / processing / done / failed"
+		},
+		"claim_token": {
+			"bsonType": "string",
+			"description": "消费实例认领令牌（并发防重复）"
+		},
+		"retry_count": {
+			"bsonType": "int",
+			"description": "已重试次数，上限 2"
+		},
+		"error_msg": {
+			"bsonType": "string"
+		},
+		"create_time": {
+			"bsonType": "long"
+		},
+		"update_time": {
+			"bsonType": "long"
+		}
+	}
+}
