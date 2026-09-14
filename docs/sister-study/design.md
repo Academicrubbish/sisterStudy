@@ -217,3 +217,4 @@ M1 新建/沿用集合（全部 permission:false，仅云函数读写；embeddin
 | 日期 | 作者 | 变更内容 |
 |------|------|---------|
 | 2026-09-14 | yuanchuang | 初始版本（M1 范围：capture + socratic-solve 简化两段式 + note） |
+| 2026-09-14 | yuanchuang | plan 阶段补充：云函数清单增加 saveNote / saveQuestion（note 编辑保存、掌握状态流转、引导埋点上报的轻量写接口，补模块划分遗漏） |
