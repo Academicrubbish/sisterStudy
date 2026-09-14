@@ -1,0 +1,11 @@
+{
+	"bsonType": "object",
+	"required": ["value"],
+	"permission": false,
+	"properties": {
+		"value": {
+			"bsonType": "string",
+			"description": "配置值（如百炼 API Key）"
+		}
+	}
+}

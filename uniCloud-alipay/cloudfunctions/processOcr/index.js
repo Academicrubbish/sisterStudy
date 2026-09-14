@@ -3,8 +3,27 @@ const axios = require('axios')
 
 // ========== 模型配置（阿里云百炼 qwen3.6-flash 视觉模型，OpenAI 兼容接口） ==========
 const QWEN_VL_URL = 'https://llm-l6r33y5g1xzlg9e0.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/chat/completions'
-const QWEN_API_KEY = process.env.QWEN_API_KEY
+const QWEN_API_KEY = process.env.QWEN_API_KEY // 环境变量优先，运行时缺失则回退 app_config 集合
 const QWEN_MODEL = 'qwen3.6-flash'
+
+/**
+ * 获取百炼 API Key：环境变量优先，读不到时回退 app_config 集合（doc id: qwen_api_key）
+ * 兼容支付宝小程序云环境变量支持不确定的情况（M0 验证项 #1）
+ * @param {Object} db 数据库实例
+ * @returns {Promise<string>} API Key，获取失败返回空串
+ */
+async function resolveApiKey(db) {
+	if (QWEN_API_KEY) return QWEN_API_KEY
+	try {
+		const res = await db.collection('app_config').doc('qwen_api_key').get()
+		if (res.data && res.data.length > 0 && res.data[0].value) {
+			return res.data[0].value
+		}
+	} catch (e) {
+		console.error('[resolveApiKey] 配置集合读取失败：', e.message)
+	}
+	return ''
+}
 
 /** OCR 识别+整理指令：视觉模型一步到位输出格式完整的 Markdown */
 const OCR_PROMPT = [
@@ -21,7 +40,7 @@ const SINGLE_BURST_THRESHOLD = 20000
 const AI_FUNCTION = 'ocr'
 
 /** 调 qwen3.6-flash 识别+整理单张图片，返回 { content, usage, error } */
-function callQwenVL(imageUrl) {
+function callQwenVL(imageUrl, apiKey) {
 	return axios.post(
 		QWEN_VL_URL,
 		{
@@ -39,7 +58,7 @@ function callQwenVL(imageUrl) {
 		},
 		{
 			headers: {
-				'Authorization': 'Bearer ' + QWEN_API_KEY,
+				'Authorization': 'Bearer ' + apiKey,
 				'Content-Type': 'application/json'
 			},
 			timeout: 45000
@@ -119,8 +138,10 @@ exports.main = async (event, context) => {
 	var logId = logRes.id
 
 	try {
-		if (!QWEN_API_KEY) {
-			throw new Error('OCR 服务缺少 QWEN_API_KEY 环境变量')
+		// 环境变量优先，缺失时回退配置集合
+		const apiKey = await resolveApiKey(db)
+		if (!apiKey) {
+			throw new Error('OCR 服务缺少 API Key（环境变量 QWEN_API_KEY 与 app_config 集合均未配置）')
 		}
 
 		// 获取临时下载链接（公网可访问，百炼服务端可读取）
@@ -144,7 +165,7 @@ exports.main = async (event, context) => {
 		// 并行调用 qwen3.6-flash 识别所有图片（识别+整理一步到位，RPM 充裕无需限流）
 		var ocrStart = Date.now()
 		var ocrResults = await Promise.all(tempUrls.map(function(url) {
-			return callQwenVL(url)
+			return callQwenVL(url, apiKey)
 		}))
 
 		var ocrFailCount = ocrResults.filter(function(r) { return r.error }).length
