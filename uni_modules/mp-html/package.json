@@ -1,0 +1,7 @@
+{
+	"id": "mp-html",
+	"displayName": "mp-html 富文本组件（含 latex 插件）",
+	"version": "2.5.2",
+	"description": "全端富文本渲染，来源 github.com/jin-yufeng/mp-html，手动集成 latex 插件",
+	"dependencies": {}
+}

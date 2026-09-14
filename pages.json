@@ -5,6 +5,54 @@
 			"style": {
 				"navigationBarTitleText": "sisterStudy"
 			}
+		},
+		{
+			"path": "pages/camera/index",
+			"style": {
+				"navigationBarTitleText": "拍照采集"
+			}
+		},
+		{
+			"path": "pages/solve/index",
+			"style": {
+				"navigationBarTitleText": "解题引导"
+			}
+		},
+		{
+			"path": "pages/wrongbook/index",
+			"style": {
+				"navigationBarTitleText": "错题本"
+			}
+		},
+		{
+			"path": "pages/wrongbook/detail",
+			"style": {
+				"navigationBarTitleText": "错题详情"
+			}
+		},
+		{
+			"path": "pages/note/index",
+			"style": {
+				"navigationBarTitleText": "我的笔记"
+			}
+		},
+		{
+			"path": "pages/note/detail",
+			"style": {
+				"navigationBarTitleText": "笔记详情"
+			}
+		},
+		{
+			"path": "pages/note/edit",
+			"style": {
+				"navigationBarTitleText": "编辑笔记"
+			}
+		},
+		{
+			"path": "pages/smoke/index",
+			"style": {
+				"navigationBarTitleText": "冒烟测试"
+			}
 		}
 	],
 	"globalStyle": {

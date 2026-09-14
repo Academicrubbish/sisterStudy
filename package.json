@@ -2,5 +2,7 @@
 	"name": "sister-study",
 	"version": "0.1.0",
 	"description": "妹妹的学习机 App：拍照解题、错题本、笔记归档、间隔复习",
-	"dependencies": {}
+	"dependencies": {
+		"markdown-it": "^15.0.2"
+	}
 }
