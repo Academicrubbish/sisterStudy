@@ -71,9 +71,33 @@ function callQwenVL(imageUrl, apiKey) {
 		}
 		return { content: content.trim(), usage: res.data.usage || null, error: '' }
 	}).catch(function(err) {
-		console.error('qwen3.6-flash 调用失败:', err.message)
-		return { content: '', usage: null, error: err.message || 'OCR识别失败' }
+		// 捕获模型返回的具体错误内容（如 invalid image url），便于定位 4xx 原因
+		var detail = ''
+		if (err.response && err.response.data) {
+			try {
+				detail = typeof err.response.data === 'string'
+					? err.response.data.slice(0, 300)
+					: JSON.stringify(err.response.data).slice(0, 300)
+			} catch (e) { /* 忽略序列化失败 */ }
+		}
+		console.error('qwen3.6-flash 调用失败:', err.message, detail)
+		return { content: '', usage: null, error: (err.message || 'OCR识别失败') + (detail ? ' | ' + detail : '') }
 	})
+}
+
+/**
+ * 在云函数内下载图片并转为 base64 data URL
+ * 背景：支付宝云存储的临时链接可能无法被百炼服务端拉取（导致 400），
+ * 改为函数内自行下载后以 base64 内联传给模型，绕开模型侧拉图
+ * @param {string} url 图片临时链接
+ * @returns {Promise<string>} data:image/xxx;base64,...
+ */
+function fetchImageAsDataUrl(url) {
+	return axios.get(url, { responseType: 'arraybuffer', timeout: 30000 })
+		.then(function(res) {
+			var contentType = (res.headers && res.headers['content-type']) || 'image/jpeg'
+			return 'data:' + contentType + ';base64,' + Buffer.from(res.data).toString('base64')
+		})
 }
 
 /** 累加多张图 usage，并保留每次模型请求的 Token，供阶梯价格精确计算 */
@@ -161,11 +185,16 @@ exports.main = async (event, context) => {
 		if (tempUrls.length !== imageUrls.length) {
 			throw new Error('获取图片临时链接失败（' + tempUrls.length + '/' + imageUrls.length + '）')
 		}
+		// 详细日志：记录生成的临时链接（截断），便于排查存储域名可达性
+		console.log('[processOcr] temp urls:', JSON.stringify(tempUrls.map(function(u) { return u.slice(0, 120) })))
 
 		// 并行调用 qwen3.6-flash 识别所有图片（识别+整理一步到位，RPM 充裕无需限流）
+		// 每张图先在函数内下载转 base64 再传给模型（支付宝云存储链接百炼侧可能拉不到）
 		var ocrStart = Date.now()
-		var ocrResults = await Promise.all(tempUrls.map(function(url) {
-			return callQwenVL(url, apiKey)
+		var ocrResults = await Promise.all(tempUrls.map(async function(url, idx) {
+			const dataUrl = await fetchImageAsDataUrl(url)
+			console.log('[processOcr] 第' + (idx + 1) + '张下载完成，大小(KB):', Math.round(dataUrl.length / 1024))
+			return callQwenVL(dataUrl, apiKey)
 		}))
 
 		var ocrFailCount = ocrResults.filter(function(r) { return r.error }).length
