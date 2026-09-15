@@ -25,6 +25,15 @@
 				<text v-if="data.question.subject" class="chip">{{ data.question.subject }}</text>
 				<text v-for="(kp, i) in data.question.knowledgePoints" :key="i" class="chip kp">{{ kp }}</text>
 				<text v-if="data.meta.root_cause" class="chip cause">易卡点：{{ data.meta.root_cause }}</text>
+				<text class="chip debug" @click="showSource = !showSource">{{ showSource ? '隐藏源码' : '显示源码' }}</text>
+			</view>
+
+			<!-- 调试：原始 Markdown 源码（长按可复制，用于排查渲染问题） -->
+			<view v-if="showSource" class="card source">
+				<text class="card-label">题目源码</text>
+				<text class="source-text" user-select>{{ data.question.contentMd }}</text>
+				<text v-if="data.stage2Full" class="card-label">讲解源码</text>
+				<text v-if="data.stage2Full" class="source-text" user-select>{{ data.stage2Full }}</text>
 			</view>
 
 			<!-- 完整讲解 -->
@@ -65,6 +74,7 @@ export default {
 			questionId: '',
 			data: null,
 			imgUrls: [],
+			showSource: false,
 			loading: true
 		}
 	},
@@ -151,6 +161,22 @@ export default {
 .chip.cause {
 	background: #fce4ec;
 	color: #d81b60;
+}
+.chip.debug {
+	background: #f0f0f0;
+	color: #999;
+}
+.source {
+	background: #fafafa;
+}
+.source-text {
+	font-size: 24rpx;
+	color: #666;
+	font-family: monospace;
+	white-space: pre-wrap;
+	word-break: break-all;
+	display: block;
+	margin-bottom: 16rpx;
 }
 .img-bar {
 	display: flex;

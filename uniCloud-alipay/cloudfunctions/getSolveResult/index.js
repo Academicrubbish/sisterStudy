@@ -123,7 +123,7 @@ async function queryQuestionList(db, _, event, uid, page, pageSize) {
 		code: 0,
 		data: list.map(q => ({
 			id: q._id,
-			digest: (q.content_md || '').replace(/[#*`\n]/g, ' ').slice(0, 60),
+			digest: (q.content_md || '').replace(/[#*`$\n]/g, ' ').slice(0, 60),
 			subject: q.subject || '',
 			knowledgePoints: q.knowledge_points || [],
 			status: q.status || 'unresolved',
@@ -149,7 +149,7 @@ async function queryNoteList(db, _, event, uid, page, pageSize) {
 		code: 0,
 		data: list.map(n => ({
 			id: n._id,
-			summary: n.summary || (n.content_md || '').replace(/[#*`\n]/g, ' ').slice(0, 60),
+			summary: n.summary || (n.content_md || '').replace(/[#*`$\n]/g, ' ').slice(0, 60),
 			subject: n.subject || '',
 			knowledgePoints: n.knowledge_points || [],
 			createTime: n.create_time
