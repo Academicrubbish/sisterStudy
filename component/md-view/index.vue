@@ -35,6 +35,12 @@ function extractFormulas(src) {
 		formulas.push('$' + f + '$')
 		return FML_PLACEHOLDER.replace('{n}', formulas.length - 1)
 	})
+	// 第三遍：捕获跨行的行内公式（要求内容含 TeX 特征字符，避免误配正文中的 $）
+	text = text.replace(/\$([^$]{1,400}?)\$/g, (m, f) => {
+		if (!/[\\^_{}]/.test(f)) return m
+		formulas.push('$' + f + '$')
+		return FML_PLACEHOLDER.replace('{n}', formulas.length - 1)
+	})
 	return { text, formulas }
 }
 
