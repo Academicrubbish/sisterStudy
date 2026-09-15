@@ -55,6 +55,7 @@
 					class="btn primary"
 					@click="toggleStatus"
 				>{{ data.question.status === 'resolved' ? '重新标记为未解决' : '我已掌握，标记解决' }}</button>
+				<button class="btn warn" @click="regenerate">讲解有误？重新生成</button>
 				<button class="btn ghost" @click="similarComing">来一道类似的</button>
 			</view>
 		</view>
@@ -63,7 +64,7 @@
 
 <script>
 import MdView from '@/component/md-view/index.vue'
-import { getQuestionDetail, setQuestionStatus } from '@/api/question.js'
+import { getQuestionDetail, setQuestionStatus, regenerateSolution } from '@/api/question.js'
 import { getTempUrls } from '@/utils/media.js'
 
 /** 错题详情：题目+原图+讲解+引导回顾+状态流转（出题入口 M2 开放） */
@@ -111,6 +112,29 @@ export default {
 		},
 		similarComing() {
 			uni.showToast({ title: '出题功能即将上线', icon: 'none' })
+		},
+
+		/** 纠错重生成：填写哪里错了（可选）→ 重新入队 → 跳引导页观看重新生成 */
+		regenerate() {
+			uni.showModal({
+				title: '重新生成讲解',
+				content: '',
+				editable: true,
+				placeholderText: '哪里错了？（如：题目看错了 / 答案算错了，可留空）',
+				confirmText: '重新生成',
+				success: async (res) => {
+					if (!res.confirm) return
+					try {
+						const data = await regenerateSolution(this.questionId, res.content || '')
+						uni.showToast({ title: '已提交重新生成', icon: 'success' })
+						setTimeout(() => {
+							uni.navigateTo({ url: '/pages/solve/index?batchId=' + data.batchId })
+						}, 600)
+					} catch (err) {
+						uni.showToast({ title: err.message || '提交失败', icon: 'none' })
+					}
+				}
+			})
 		}
 	}
 }
@@ -210,6 +234,11 @@ export default {
 .btn.primary {
 	background-color: #4c7dff;
 	color: #fff;
+}
+.btn.warn {
+	background-color: #fff8e1;
+	color: #ef6c00;
+	border: 2rpx solid #ef6c00;
 }
 .btn.ghost {
 	background-color: #fff;

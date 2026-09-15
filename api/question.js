@@ -25,3 +25,8 @@ export function setQuestionStatus(questionId, status) {
 export function deleteQuestion(questionId) {
 	return getUid().then(uid => callFn('saveQuestion', { uid, action: 'delete', questionId }))
 }
+
+/** 纠错重生成讲解（note：哪里错了，注入重新生成的 prompt），返回新 batchId */
+export function regenerateSolution(questionId, note) {
+	return getUid().then(uid => callFn('saveQuestion', { uid, action: 'regenerate', questionId, note }))
+}

@@ -4,6 +4,11 @@ const axios = require('axios')
 // ========== 常量 ==========
 const GLM_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
 const GLM_MODEL = 'glm-5'
+// 百炼 MaaS 端点（与 processOcr 同通道，qwen3.6-flash 视觉解题用）
+const QWEN_VL_URL = 'https://llm-l6r33y5g1xzlg9e0.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/chat/completions'
+
+const ZHIPU_ENV_KEY = process.env.ZHIPU_API_KEY
+const QWEN_ENV_KEY = process.env.QWEN_API_KEY
 const EMBEDDING_URL = 'https://open.bigmodel.cn/api/paas/v4/embeddings'
 const EMBED_MODEL = 'embedding-3'
 const EMBED_DIMENSIONS = 512
@@ -14,8 +19,6 @@ const TASK_BATCH_SIZE = 5
 const STUCK_RESET_MS = 10 * 60 * 1000
 const MAX_RETRY_COUNT = 2
 const GLM_TIMEOUT = 300000
-
-const ZHIPU_ENV_KEY = process.env.ZHIPU_API_KEY
 
 // ========== 苏格拉底式解题 prompt（JSON 优先版） ==========
 const SOLUTION_JSON_PROMPT = `你是一名耐心的一对一家教老师，正在辅导一名{grade}学生。你的教学法是苏格拉底式引导：先给思路引导让学生自己想，学生明确要求后才给完整解答。
@@ -78,6 +81,52 @@ async function resolveZhipuKey(db) {
 		console.error('[resolveZhipuKey] 配置集合读取失败：', e.message)
 	}
 	return ''
+}
+
+/**
+ * 获取百炼 API Key：环境变量优先，读不到回退 app_config 集合（doc id: qwen_api_key）
+ * @param {Object} db 数据库实例
+ * @returns {Promise<string>}
+ */
+async function resolveQwenKey(db) {
+	if (QWEN_ENV_KEY) return QWEN_ENV_KEY
+	try {
+		const res = await db.collection('app_config').doc('qwen_api_key').get()
+		if (res.data && res.data.length > 0 && res.data[0].value) {
+			return res.data[0].value
+		}
+	} catch (e) {
+		console.error('[resolveQwenKey] 配置集合读取失败：', e.message)
+	}
+	return ''
+}
+
+/**
+ * 调百炼 qwen 视觉模型（OpenAI 兼容格式，与 processOcr 同端点）
+ * @param {string} key 百炼 API Key
+ * @param {Array} messages 消息数组（content 支持多模态数组）
+ * @param {Object} opts { model, temperature, enable_thinking }
+ * @returns {Promise<{content: string, usage: Object}>}
+ */
+async function callQwenVision(key, messages, opts) {
+	const res = await axios.post(
+		QWEN_VL_URL,
+		{
+			model: opts.model,
+			messages: messages,
+			max_tokens: 8192,
+			temperature: opts.temperature,
+			enable_thinking: opts.enable_thinking !== false // 解题默认开思考提升数学推理
+		},
+		{
+			headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+			timeout: GLM_TIMEOUT
+		}
+	)
+	const choice = res.data.choices && res.data.choices[0]
+	const content = (choice && choice.message && choice.message.content) || ''
+	if (!content.trim()) throw new Error('qwen 视觉模型返回空内容')
+	return { content: content.trim(), usage: res.data.usage || null }
 }
 
 /**
@@ -172,51 +221,99 @@ async function dispatch(db, task) {
 
 /**
  * 解题任务：GLM 生成苏格拉底两段式内容
- * 优先 response_format JSON；失败降级固定标题 prompt + 拆分
+ * 视觉模式（推荐）：原图 base64 直传视觉模型，OCR 文本仅作参考，规避识别错误传播
+ * 纠错重生成：payload.regenerate_note 会注入 prompt，提示模型上次讲解有误
+ * 优先 response_format JSON；失败降级固定标题 prompt + 拆分；视觉失败降级纯文本模型
  */
 async function handleSolution(db, task) {
 	const key = await resolveZhipuKey(db)
 	if (!key) throw new Error('缺少智谱 API Key')
 
 	const payload = task.payload
+
+	// 视觉模式：原图直传千问视觉模型（用户实测千问视觉优于智谱），OCR 文本仅作参考
+	// 模型可通过 app_config.solution_model 配置（默认 qwen3.6-flash，与 OCR 同端点同 Key）
+	let imageDataUrls = []
+	const visionModel = await resolveConfigValue(db, 'solution_model', 'qwen3.6-flash')
+	const qwenKey = await resolveQwenKey(db)
+	if (payload.image_file_ids && payload.image_file_ids.length > 0 && qwenKey) {
+		try {
+			imageDataUrls = await loadImagesAsDataUrls(payload.image_file_ids)
+			console.log('[handleSolution] 视觉模式，图片数：', imageDataUrls.length, '模型：', visionModel)
+		} catch (e) {
+			console.error('[handleSolution] 图片加载失败，降级纯文本模式：', e.message)
+			imageDataUrls = []
+		}
+	}
+	const useVision = imageDataUrls.length > 0
+
 	const callStart = Date.now()
-	const messages = (prompt) => [
-		{ role: 'system', content: prompt.replace(/\{grade\}/g, payload.grade || '初中') },
-		{ role: 'user', content: payload.content }
-	]
+	const messages = (prompt) => {
+		const system = prompt.replace(/\{grade\}/g, payload.grade || '初中')
+		let userText = useVision
+			? '请解答图片中的题目。OCR 初步识别的文本仅供参考（可能存在识别错误，一切以图片为准）：\n\n' + payload.content
+			: payload.content
+		if (payload.regenerate_note) {
+			userText += '\n\n【用户反馈】上一次生成的讲解存在错误：' + payload.regenerate_note + '。请重新仔细审题（有图以图为准），给出正确解答。'
+		}
+		if (useVision) {
+			const content = imageDataUrls.map(u => ({ type: 'image_url', image_url: { url: u } }))
+			content.push({ type: 'text', text: userText })
+			return [
+				{ role: 'system', content: system },
+				{ role: 'user', content: content }
+			]
+		}
+		return [
+			{ role: 'system', content: system },
+			{ role: 'user', content: userText }
+		]
+	}
+	// 视觉走千问（解题开启思考模式提升数学推理），纯文本走智谱 glm-5
+	const visionCall = (prompt, temperature) => callQwenVision(qwenKey, messages(prompt), {
+		model: visionModel,
+		temperature: temperature,
+		enable_thinking: true
+	})
 
 	let result = null
 	let usage = null
 	// 尝试 A：结构化 JSON 输出
 	try {
-		const res = await callGlm(key, messages(SOLUTION_JSON_PROMPT), {
-			temperature: 0.3,
-			response_format: { type: 'json_object' }
-		})
+		const res = useVision
+			? await visionCall(SOLUTION_JSON_PROMPT, 0.3)
+			: await callGlm(key, messages(SOLUTION_JSON_PROMPT), {
+				temperature: 0.3,
+				response_format: { type: 'json_object' }
+			})
 		result = parseJsonObject(res.content)
 		usage = res.usage
 	} catch (e) {
 		console.warn('[handleSolution] JSON 模式失败，降级标题模式：', e.message)
 	}
 
-	// 尝试 B：退化固定标题拆分（Toolbox 已验证）
+	// 尝试 B：退化固定标题拆分；视觉连续失败回退 glm-5 纯文本
 	if (!result) {
-		const res = await callGlm(key, messages(SOLUTION_TITLE_PROMPT), { temperature: 0.7 })
-		if (res.content.indexOf('这不是一道有效的题目') > -1) {
-			result = { is_question: false, stage1_hint: res.content }
-		} else {
-			const parts = splitByTitles(res.content)
-			result = {
-				is_question: true,
-				subject: '',
-				knowledge_points: [],
-				root_cause_guess: '',
-				stage1_hint: parts[0],
-				stage2_full: parts[1],
-				similar_exercise: parts[2]
+		if (useVision) {
+			try {
+				const res = await visionCall(SOLUTION_TITLE_PROMPT, 0.7)
+				usage = usage || res.usage
+				result = buildResultFromTitle(res.content)
+			} catch (e2) {
+				console.warn('[handleSolution] 视觉标题模式失败，回退纯文本模型：', e2.message)
+				const textMessages = [
+					{ role: 'system', content: SOLUTION_TITLE_PROMPT.replace(/\{grade\}/g, payload.grade || '初中') },
+					{ role: 'user', content: buildTextUser(payload) }
+				]
+				const res = await callGlm(key, textMessages, { temperature: 0.7 })
+				usage = usage || res.usage
+				result = buildResultFromTitle(res.content)
 			}
+		} else {
+			const res = await callGlm(key, messages(SOLUTION_TITLE_PROMPT), { temperature: 0.7 })
+			usage = usage || res.usage
+			result = buildResultFromTitle(res.content)
 		}
-		usage = res.usage
 	}
 
 	await recordAiCall(db, {
@@ -357,15 +454,15 @@ async function handleEmbed(db, task) {
 /**
  * 调 GLM chat completions
  * @param {string} key API Key
- * @param {Array} messages 消息数组
- * @param {Object} opts { temperature, response_format }
+ * @param {Array} messages 消息数组（content 支持字符串或多模态数组）
+ * @param {Object} opts { temperature, response_format, model }
  * @returns {Promise<{content: string, usage: Object}>}
  */
 async function callGlm(key, messages, opts) {
 	const res = await axios.post(
 		GLM_URL,
 		{
-			model: GLM_MODEL,
+			model: opts.model || GLM_MODEL,
 			messages: messages,
 			thinking: { type: 'disabled' },
 			max_tokens: 8192,
@@ -384,6 +481,56 @@ async function callGlm(key, messages, opts) {
 }
 
 /**
+ * 读 app_config 通用配置（doc id → value），不存在返回默认值
+ * @param {Object} db 数据库实例
+ * @param {string} docId 配置项 ID
+ * @param {string} fallback 默认值
+ * @returns {Promise<string>}
+ */
+async function resolveConfigValue(db, docId, fallback) {
+	try {
+		const res = await db.collection('app_config').doc(docId).get()
+		if (res.data && res.data.length > 0 && res.data[0].value) {
+			return String(res.data[0].value).trim()
+		}
+	} catch (e) { /* 配置缺失用默认值 */ }
+	return fallback
+}
+
+/**
+ * 在云函数内下载图片并转为 base64 data URL（视觉模型入参用）
+ * @param {string} url 图片临时链接
+ * @returns {Promise<string>}
+ */
+function fetchImageAsDataUrl(url) {
+	return axios.get(url, { responseType: 'arraybuffer', timeout: 30000 })
+		.then(function(res) {
+			var contentType = (res.headers && res.headers['content-type']) || 'image/jpeg'
+			return 'data:' + contentType + ';base64,' + Buffer.from(res.data).toString('base64')
+		})
+}
+
+/**
+ * 云存储 fileID 列表 → base64 data URL 列表（顺序一致）
+ * @param {string[]} fileIds
+ * @returns {Promise<string[]>}
+ */
+async function loadImagesAsDataUrls(fileIds) {
+	const tempUrlRes = await uniCloud.getTempFileURL({ fileList: fileIds })
+	const fileList = tempUrlRes.fileList || []
+	const urls = fileIds.map(id => {
+		const hit = fileList.find(f => f.fileID === id)
+		return hit ? hit.tempFileURL : ''
+	}).filter(Boolean)
+	if (urls.length === 0) throw new Error('获取图片临时链接失败')
+	const out = []
+	for (const u of urls) {
+		out.push(await fetchImageAsDataUrl(u))
+	}
+	return out
+}
+
+/**
  * 从模型输出中解析 JSON 对象（容忍 ```json 围栏与前后杂文）
  * @param {string} text 模型输出
  * @returns {Object|null} 解析失败返回 null
@@ -397,6 +544,32 @@ function parseJsonObject(text) {
 	} catch (e) {
 		return null
 	}
+}
+
+/** 从标题模式输出构造 result 对象 */
+function buildResultFromTitle(content) {
+	if (content.indexOf('这不是一道有效的题目') > -1) {
+		return { is_question: false, stage1_hint: content }
+	}
+	const parts = splitByTitles(content)
+	return {
+		is_question: true,
+		subject: '',
+		knowledge_points: [],
+		root_cause_guess: '',
+		stage1_hint: parts[0],
+		stage2_full: parts[1],
+		similar_exercise: parts[2]
+	}
+}
+
+/** 纯文本模式（无图/视觉失败）的 user 文本 */
+function buildTextUser(payload) {
+	let userText = payload.content
+	if (payload.regenerate_note) {
+		userText += '\n\n【用户反馈】上一次生成的讲解存在错误：' + payload.regenerate_note + '。请重新仔细审题，给出正确解答。'
+	}
+	return userText
 }
 
 /**

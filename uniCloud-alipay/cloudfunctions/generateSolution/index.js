@@ -177,12 +177,13 @@ exports.main = async (event, context) => {
 			uid: uid
 		})
 
-		// 写入解题任务（batchId 即任务 ID）
+		// 写入解题任务（batchId 即任务 ID；携带原图供视觉解题模式直传模型）
 		const taskRes = await db.collection('task_queue').add({
 			task_type: 'solution',
 			ref_id: solutionRes.id,
 			payload: {
 				content: content,
+				image_file_ids: imageFileIds,
 				question_id: questionRes.id,
 				solution_log_id: solutionRes.id,
 				uid: uid,
