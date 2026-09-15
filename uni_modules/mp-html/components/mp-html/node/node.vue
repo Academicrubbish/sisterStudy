@@ -70,7 +70,7 @@
       
       <!-- 富文本 -->
       <!-- #ifdef H5 || ((MP-WEIXIN || MP-QQ || APP-PLUS || MP-360) && VUE2) -->
-      <rich-text v-else-if="!n.c&&!handler.isInline(n.name, n.attrs.style)" :id="n.attrs.id" :style="n.f" :user-select="opts[4]" :nodes="[n]" />
+      <rich-text v-else-if="!n.c&&(n.l||!handler.isInline(n.name, n.attrs.style))" :id="n.attrs.id" :style="n.f" :user-select="opts[4]" :nodes="[n]" />
       <!-- #endif -->
       <!-- #ifndef H5 || ((MP-WEIXIN || MP-QQ || APP-PLUS || MP-360) && VUE2) -->
       <rich-text v-else-if="!n.c" :id="n.attrs.id" :style="'display:inline;'+n.f" :preview="false" :selectable="opts[4]" :user-select="opts[4]" :nodes="[n]" />
@@ -453,6 +453,8 @@ export default {
 }
 </script>
 <style>
+/* latex 插件样式（官方 build.js 的 import 项，手动集成改为 @import） */
+@import "../plugin/latex/katex.css";
 /* a 标签默认效果 */
 ._a {
   padding: 1.5px 0 1.5px 0;
