@@ -27,6 +27,8 @@ function extractFormulas(src) {
 	let text = String(src)
 		.replace(/\\\[([\s\S]+?)\\\]/g, (m, f) => '$$' + f + '$$')
 		.replace(/\\\(([\s\S]+?)\\\)/g, (m, f) => '$' + f + '$')
+	// 保护转义的 \$（字面美元符号，抽取完成后还原）
+	text = text.replace(/\\\$/g, '§D§')
 	text = text.replace(/\$\$([\s\S]+?)\$\$/g, (m, f) => {
 		formulas.push('$$' + f + '$$')
 		return FML_PLACEHOLDER.replace('{n}', formulas.length - 1)
@@ -41,7 +43,14 @@ function extractFormulas(src) {
 		formulas.push('$' + f + '$')
 		return FML_PLACEHOLDER.replace('{n}', formulas.length - 1)
 	})
+	// 清理无法配对的孤立 $（模型输出噪声），还原字面美元符
+	text = text.replace(/\$/g, '').replace(/§D§/g, '$')
 	return { text, formulas }
+}
+
+/** 降级显示用的公式纯文本（去掉外层 $ 定界符） */
+function toPlainFormula(f) {
+	return f.replace(/^\$\$/, '').replace(/\$$/, '')
 }
 
 /** 公式文本放回 HTML 前转义（LaTeX 中的 < > & 不能裸进 HTML） */
@@ -98,8 +107,8 @@ export default {
 				return
 			}
 
-			// 第一步：先以源码文本形式立即展示（加载态）
-			this.renderedHtml = replaceFormulas((i, f) => escapeFormula(f))
+			// 第一步：先以源码文本形式立即展示（加载态，不带 $ 定界符）
+			this.renderedHtml = replaceFormulas((i, f) => escapeFormula(toPlainFormula(f)))
 
 			// 第二步：批量渲染 SVG 替换（带令牌防过期覆盖）
 			try {
@@ -107,7 +116,7 @@ export default {
 				if (token !== this.renderToken) return
 				this.renderedHtml = replaceFormulas((i, f) => {
 					const uri = uris[i]
-					if (!uri) return escapeFormula(f) // 渲染失败降级源码
+					if (!uri) return escapeFormula(toPlainFormula(f)) // 渲染失败降级源码
 					const isDisplay = f.slice(0, 2) === '$$'
 					const style = isDisplay
 						? 'display:block;margin:8px auto;max-width:100%'
