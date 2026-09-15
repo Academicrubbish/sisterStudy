@@ -145,7 +145,7 @@ export default {
 						this.errorMsg = data.errorMsg
 					}
 				}
-			}).then((data) => {
+			}).then(async (data) => {
 				if (!data) {
 					this.phase = 'error'
 					return
