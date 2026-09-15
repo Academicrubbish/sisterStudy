@@ -2,7 +2,7 @@
  * @fileoverview latex 插件
  * katex.min.js来源 https://github.com/rojer95/katex-mini
  */
-const parse = require('./katex.min')
+import parse from './katex.min.js'
 
 function Latex () {
 
@@ -77,4 +77,4 @@ Latex.prototype.onParse = function (node, vm) {
   }
 }
 
-module.exports = Latex
+export default Latex
