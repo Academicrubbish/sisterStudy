@@ -43,8 +43,8 @@
 import node from './node/node'
 // #endif
 import Parser from './parser'
-import latex from './plugin/latex/index.js'
-const plugins = [latex]
+
+const plugins = []  // latex 由服务端 renderLatex SVG 方案接管，插件文件保留备用
 // #ifdef APP-PLUS-NVUE
 const dom = weex.requireModule('dom')
 // #endif

@@ -1,0 +1,9 @@
+{
+  "name": "renderLatex",
+  "version": "1.0.0",
+  "description": "LaTeX 公式批量渲染云函数，返回 Base64 SVG data URI 数组",
+  "main": "index.js",
+  "dependencies": {
+    "mathjax-node": "^2.1.1"
+  }
+}
