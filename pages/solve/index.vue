@@ -24,6 +24,19 @@
 
 		<!-- 第一段：思路引导 -->
 		<view v-else-if="phase === 'stage1'" class="content">
+			<view v-if="originUrls.length" class="card">
+				<text class="card-label">题目原图</text>
+				<view class="img-bar">
+					<image
+						v-for="(u, i) in originUrls"
+						:key="i"
+						:src="u"
+						mode="aspectFill"
+						class="origin-img"
+						@click="preview(i)"
+					/>
+				</view>
+			</view>
 			<view class="meta-bar">
 				<text v-if="meta.subject" class="meta-chip">{{ meta.subject }}</text>
 				<text v-for="(kp, i) in meta.knowledge_points" :key="i" class="meta-chip kp">{{ kp }}</text>
@@ -86,6 +99,7 @@ import MdView from '@/component/md-view/index.vue'
 import { getSolution } from '@/api/solution.js'
 import { reportTrace } from '@/api/question.js'
 import { pollTask } from '@/utils/poll.js'
+import { getTempUrls } from '@/utils/media.js'
 
 /**
  * 解题引导页：轮询 → stage1 思路引导 → 答案门槛 → stage2 完整解答
@@ -105,6 +119,7 @@ export default {
 			errorMsg: '',
 			gateAnswer: '',
 			showSimilar: false,
+			originUrls: [],
 			startTime: Date.now(),
 			skippedGate: false
 		}
@@ -146,6 +161,10 @@ export default {
 				this.similarExercise = data.similarExercise
 				this.meta = data.meta || {}
 				this.phase = data.question && data.question.status === 'invalid' ? 'invalid' : 'stage1'
+				// 题目原图转临时链接（fileID 在 App 端不能直接渲染）
+				if (data.question && data.question.imageFileIds.length) {
+					this.originUrls = await getTempUrls(data.question.imageFileIds)
+				}
 			}).catch(() => {
 				this.phase = 'error'
 				this.errorMsg = '等待超时，请稍后在错题本中查看'
@@ -183,6 +202,10 @@ export default {
 			} else {
 				this.backHome()
 			}
+		},
+
+		preview(index) {
+			uni.previewImage({ urls: this.originUrls, current: index })
 		},
 
 		backHome() {
@@ -286,6 +309,16 @@ export default {
 	border-radius: 16rpx;
 	padding: 24rpx;
 	margin-bottom: 24rpx;
+}
+.img-bar {
+	display: flex;
+	flex-wrap: wrap;
+}
+.origin-img {
+	width: 200rpx;
+	height: 200rpx;
+	border-radius: 12rpx;
+	margin: 0 12rpx 12rpx 0;
 }
 .my-answer-text {
 	font-size: 30rpx;

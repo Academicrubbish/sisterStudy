@@ -13,13 +13,13 @@
 				<md-view :content="note.contentMd" />
 			</view>
 
-			<view v-if="note.imageFileIds.length" class="card">
+			<view v-if="imgUrls.length" class="card">
 				<text class="card-label">原图</text>
 				<view class="img-bar">
 					<image
-						v-for="(fid, i) in note.imageFileIds"
+						v-for="(u, i) in imgUrls"
 						:key="i"
-						:src="fid"
+						:src="u"
 						mode="aspectFill"
 						class="origin-img"
 						@click="preview(i)"
@@ -38,6 +38,7 @@
 <script>
 import MdView from '@/component/md-view/index.vue'
 import { getNote, saveNote } from '@/api/note.js'
+import { getTempUrls } from '@/utils/media.js'
 
 /** 笔记详情：渲染 + 原图对照 + 编辑/删除入口 */
 export default {
@@ -46,6 +47,7 @@ export default {
 		return {
 			noteId: '',
 			note: null,
+			imgUrls: [],
 			loading: true
 		}
 	},
@@ -58,12 +60,15 @@ export default {
 			this.loading = true
 			try {
 				this.note = await getNote(this.noteId)
+				if (this.note && this.note.imageFileIds.length) {
+					this.imgUrls = await getTempUrls(this.note.imageFileIds)
+				}
 			} finally {
 				this.loading = false
 			}
 		},
 		preview(index) {
-			uni.previewImage({ urls: this.note.imageFileIds, current: index })
+			uni.previewImage({ urls: this.imgUrls, current: index })
 		},
 		goEdit() {
 			uni.navigateTo({ url: '/pages/note/edit?id=' + this.noteId })

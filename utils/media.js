@@ -73,3 +73,27 @@ export async function uploadImages(paths, folder) {
 	}
 	return fileIds
 }
+
+/**
+ * 云存储 fileID 转可显示的临时链接（已是 http(s) 的直接透传）
+ * App 端 <image> 对部分 fileID 格式不能直接渲染，统一转换最稳
+ * @param {string[]} fileIds
+ * @returns {Promise<string[]>} 可用于 <image :src> 的 URL 列表（顺序一致）
+ */
+export async function getTempUrls(fileIds) {
+	if (!fileIds || !fileIds.length) return []
+	const needConvert = fileIds.filter(f => f && f.indexOf('http') !== 0)
+	const urlMap = {}
+	if (needConvert.length) {
+		try {
+			const res = await uniCloud.getTempFileURL({ fileList: needConvert })
+			const list = res.fileList || []
+			list.forEach((f) => {
+				if (f.fileID && f.tempFileURL) urlMap[f.fileID] = f.tempFileURL
+			})
+		} catch (e) {
+			console.error('[getTempUrls] 转换失败，回退原始 fileID：', e.message)
+		}
+	}
+	return fileIds.map(f => (f.indexOf('http') === 0 ? f : (urlMap[f] || f)))
+}

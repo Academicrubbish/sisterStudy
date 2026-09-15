@@ -8,11 +8,11 @@
 			<view class="card">
 				<text class="card-label">题目</text>
 				<md-view :content="data.question.contentMd" />
-				<view v-if="data.question.imageFileIds.length" class="img-bar">
+				<view v-if="imgUrls.length" class="img-bar">
 					<image
-						v-for="(fid, i) in data.question.imageFileIds"
+						v-for="(u, i) in imgUrls"
 						:key="i"
-						:src="fid"
+						:src="u"
 						mode="aspectFill"
 						class="origin-img"
 						@click="preview(i)"
@@ -55,6 +55,7 @@
 <script>
 import MdView from '@/component/md-view/index.vue'
 import { getQuestionDetail, setQuestionStatus } from '@/api/question.js'
+import { getTempUrls } from '@/utils/media.js'
 
 /** 错题详情：题目+原图+讲解+引导回顾+状态流转（出题入口 M2 开放） */
 export default {
@@ -63,6 +64,7 @@ export default {
 		return {
 			questionId: '',
 			data: null,
+			imgUrls: [],
 			loading: true
 		}
 	},
@@ -75,6 +77,9 @@ export default {
 			this.loading = true
 			try {
 				this.data = await getQuestionDetail(this.questionId)
+				if (this.data && this.data.question.imageFileIds.length) {
+					this.imgUrls = await getTempUrls(this.data.question.imageFileIds)
+				}
 			} catch (err) {
 				uni.showToast({ title: err.message || '加载失败', icon: 'none' })
 			} finally {
@@ -82,7 +87,7 @@ export default {
 			}
 		},
 		preview(index) {
-			uni.previewImage({ urls: this.data.question.imageFileIds, current: index })
+			uni.previewImage({ urls: this.imgUrls, current: index })
 		},
 		async toggleStatus() {
 			const next = this.data.question.status === 'resolved' ? 'unresolved' : 'resolved'
