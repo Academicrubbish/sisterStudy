@@ -48,9 +48,9 @@ function extractFormulas(src) {
 	return { text, formulas }
 }
 
-/** 降级显示用的公式纯文本（去掉外层 $ 定界符） */
+/** 降级显示用的公式纯文本（贪婪去掉首尾全部 $ 定界符） */
 function toPlainFormula(f) {
-	return f.replace(/^\$\$/, '').replace(/\$$/, '')
+	return f.replace(/^\$+/, '').replace(/\$+$/, '')
 }
 
 /** 公式文本放回 HTML 前转义（LaTeX 中的 < > & 不能裸进 HTML） */

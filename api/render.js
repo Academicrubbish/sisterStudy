@@ -18,9 +18,10 @@ function wrapCjkInText(tex) {
 
 /**
  * 去掉 $ / $$ 包裹，MathJax 吃裸 TeX
+ * 注意：贪婪剥掉首尾全部 $（原实现块级公式结尾会残留一个 $ 被渲染进 SVG）
  */
 function stripDollars(f) {
-	return f.replace(/^\$\$/, '').replace(/\$$/, '')
+	return f.replace(/^\$+/, '').replace(/\$+$/, '')
 }
 
 /**
